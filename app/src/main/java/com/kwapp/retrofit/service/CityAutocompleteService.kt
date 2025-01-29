@@ -7,14 +7,14 @@ import retrofit2.http.Query
 
 interface CityAutocompleteService {
     @GET("autocomplete")
-    fun getCitySuggestions(
+    suspend fun getCitySuggestions(
         @Query("q") query: String,
-        @Query("limit") limit: Int,
+        @Query("limit") limit: Int = 5, // Max 5 items
         @Query("apikey") apiKey: String
-    ): Call<CityResponseWrapper>
+    ): CityResponseWrapper
 
     @GET("geocode")
-    fun getCityGeocode(
+    suspend fun getCityGeocode(
         @Query("q") cityName: String,
         @Query("apikey") apiKey: String
     ): Call<CityResponseWrapper>

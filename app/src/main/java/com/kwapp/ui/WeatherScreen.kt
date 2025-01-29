@@ -21,27 +21,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
-import com.kwapp.R
-import com.kwapp.retrofit.pojo.WeatherResponse
-import com.kwapp.service.WeatherService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kwapp.R
+import com.kwapp.service.WeatherService
 import com.kwapp.utils.DateUtils
 import com.kwapp.utils.WeatherCondition
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-
 
 @Composable
 fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
-    val address = "Current Address: 123 Main Street"
     val context = LocalContext.current // ✅ Get Context inside Composable
 
-    // ✅ Fix 1: Use collectAsStateWithLifecycle() properly
-    val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle()
+    // ✅ Observe Address and Weather Data
+    val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // ✅ Address Flow
+    val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // ✅ Weather Flow
 
     Column(
         modifier = Modifier
@@ -65,14 +59,12 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                 disabledContainerColor = Color.White
             ),
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = {
-                // Handle search action
-            })
+            keyboardActions = KeyboardActions(onSearch = { /* Handle search action */ })
         )
 
-        // 🔹 Address TextView
+        // 🔹 Address TextView (✅ Shows the received address dynamically)
         Text(
-            text = address,
+            text = address.orEmpty(), // ✅ Converts null to ""
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier
                 .fillMaxWidth()
@@ -100,25 +92,25 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                     .toInt()
 
                 val displayDate = if (index == 0) {
-                    context.getString(R.string.today) // ✅ Assign String instead of AnnotatedString
+                    context.getString(R.string.today) // ✅ Show "Today"
                 } else {
                     DateUtils.formatDate(time) // ✅ Convert "yyyy-MM-dd" -> "d.M.yyyy"
                 }
 
                 WeatherItem(
-                    iconRes = R.drawable.ic_default, // TODO: Map weather code to icon
-                    temperature = "$maxTemp°C", // ✅ Fix: Use Max Temp
-                    feelsLike = "$feelsLike°C", // ✅ Fix: Use calculated Feels Like
+                    iconRes = WeatherCondition.fromCode(weatherData!!.daily.weatherCode[index]).iconResId, // ✅ Fixed icon mapping
+                    temperature = "$maxTemp°C",
+                    feelsLike = "$feelsLike°C",
                     minTemp = "$minTemp°C",
                     maxTemp = "$maxTemp°C",
-                    humidity = "$humidity%", // ✅ Fix: Use calculated Humidity
-                    dateInfo = displayDate,  // ✅ Show "Today" if index == 0
-                    weatherCode = weatherData!!.daily.weatherCode[index] // TODO: Map weather code to description
+                    humidity = "$humidity%",
+                    dateInfo = displayDate,
+                    weatherCode = weatherData!!.daily.weatherCode[index]
                 )
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(weatherList) { weatherItem -> // ✅ weatherItem is now of type WeatherItem
+                items(weatherList) { weatherItem ->
                     WeatherItemView(weatherItem)
                 }
             }
@@ -143,7 +135,7 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ✅ Weather Icon (from enum)
+            // ✅ Weather Icon (Fixed)
             Image(
                 painter = painterResource(id = weatherCondition.iconResId),
                 contentDescription = "Weather Icon",
@@ -160,12 +152,12 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 Text(text = "Humidity: ${weatherItem.humidity}", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // WeatherItemView
+            // ✅ Date & Conditions
             Column(horizontalAlignment = Alignment.End) {
                 val context = LocalContext.current
                 Text(
                     text = buildAnnotatedString {
-                        if (weatherItem.dateInfo == context.getString(R.string.today)) { // ✅ Fixed: Use context here
+                        if (weatherItem.dateInfo == context.getString(R.string.today)) {
                             pushStyle(SpanStyle(fontWeight = FontWeight.Bold)) // ✅ Make "Today" Bold
                             append(weatherItem.dateInfo)
                             pop()
@@ -196,5 +188,5 @@ data class WeatherItem(
     val maxTemp: String,
     val humidity: String,
     val dateInfo: String,
-    val weatherCode: Int // ✅ Ensure weatherCode is included
+    val weatherCode: Int
 )

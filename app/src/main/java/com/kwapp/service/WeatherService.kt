@@ -13,7 +13,10 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
 import com.kwapp.retrofit.RetrofitClient
+import com.kwapp.retrofit.RetrofitClient.addressApi
+import com.kwapp.retrofit.pojo.AddressResponse
 import com.kwapp.retrofit.pojo.WeatherResponse
+import com.kwapp.retrofit.service.AddressApiService
 import com.kwapp.utils.TAG
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,17 +28,20 @@ class WeatherService : Service() {
 
 
     companion object {
-        private val _currentLocationFlow = MutableStateFlow<Location?>(null) // ✅ Add Location StateFlow
-        val currentLocationFlow = _currentLocationFlow.asStateFlow() // ✅ Expose Location Flow
+        private val _currentLocationFlow = MutableStateFlow<Location?>(null)
+        val currentLocationFlow = _currentLocationFlow.asStateFlow()
 
         private val _weatherFlow = MutableStateFlow<WeatherResponse?>(null)
-        val weatherLiveData = _weatherFlow.asStateFlow() // ✅ Expose as StateFlow
+        val weatherLiveData = _weatherFlow.asStateFlow()
+
+        private val _addressFlow = MutableStateFlow<String?>(null) // ✅ Store address
+        val addressLiveData = _addressFlow.asStateFlow()
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
-    private var lastSavedLocation: Location? = null // Store the last saved location
-
+    private var lastSavedLocation: Location? = null
+    private val addressApi: AddressApiService = RetrofitClient.addressApi // ✅ Fix: Use Address API from RetrofitClient
 
     override fun onCreate() {
         super.onCreate()
@@ -53,16 +59,17 @@ class WeatherService : Service() {
                 if (lastLocation != null) {
                     val previousLocation = lastSavedLocation
 
-                    // ✅ Check if the latitude or longitude difference is greater than 0.001
                     if (previousLocation == null ||
                         kotlin.math.abs(lastLocation.latitude - previousLocation.latitude) > 0.001 ||
                         kotlin.math.abs(lastLocation.longitude - previousLocation.longitude) > 0.001) {
 
                         Log.i(TAG, "New significant location update: Lat=${lastLocation.latitude}, Lon=${lastLocation.longitude}")
 
-                        _currentLocationFlow.value = lastLocation // ✅ Update location flow
-                        lastSavedLocation = lastLocation // ✅ Save this location as the last one
-                        fetchWeatherData(lastLocation.latitude, lastLocation.longitude)
+                        _currentLocationFlow.value = lastLocation
+                        lastSavedLocation = lastLocation
+
+                        // ✅ Fetch Weather & Address
+                        fetchWeatherAndAddress(lastLocation.latitude, lastLocation.longitude)
 
                     } else {
                         Log.d(TAG, "Location update ignored (change < 0.001)")
@@ -78,22 +85,19 @@ class WeatherService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        // Get immediate location
-        fusedLocationClient.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY, null
-        ).addOnSuccessListener { location ->
-            if (location != null) {
-                Log.i(TAG, "Immediate location: Lat=${location.latitude}, Lon=${location.longitude}")
-                _currentLocationFlow.value = location // ✅ Update immediate location
-                fetchWeatherData(location.latitude, location.longitude)
-            } else {
-                Log.w(TAG, "Immediate location is null")
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    Log.i(TAG, "Immediate location: Lat=${location.latitude}, Lon=${location.longitude}")
+                    _currentLocationFlow.value = location
+                    fetchWeatherAndAddress(location.latitude, location.longitude)
+                } else {
+                    Log.w(TAG, "Immediate location is null")
+                }
+            }.addOnFailureListener { e ->
+                Log.e(TAG, "Failed to get immediate location", e)
             }
-        }.addOnFailureListener { e ->
-            Log.e(TAG, "Failed to get immediate location", e)
-        }
 
-        // Start continuous location updates
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 10000)
             .setMinUpdateIntervalMillis(5000)
             .build()
@@ -108,7 +112,16 @@ class WeatherService : Service() {
         }
     }
 
-    private fun fetchWeatherData(lat: Double, lon: Double) {
+    // ✅ Combined Function to Fetch Both Weather & Address
+    private fun fetchWeatherAndAddress(lat: Double, lon: Double) {
+        fetchWeatherData(lat, lon) { success ->
+            if (success) {
+                fetchAddressData(lat, lon)
+            }
+        }
+    }
+
+    private fun fetchWeatherData(lat: Double, lon: Double, callback: (Boolean) -> Unit) {
         Log.d(TAG, "🌍 Fetching weather data for Lat: $lat, Lon: $lon")
 
         val call = RetrofitClient.weatherApi.getWeather(lat, lon)
@@ -121,13 +134,38 @@ class WeatherService : Service() {
                 if (response.isSuccessful) {
                     Log.d(TAG, "🌤️ Success: ${response.body()}")
                     _weatherFlow.value = response.body()
+                    callback(true) // ✅ Weather fetched successfully
                 } else {
                     Log.e(TAG, "❌ API Error: ${response.code()} - ${response.errorBody()?.string()}")
+                    callback(false)
                 }
             }
 
             override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                Log.e(TAG, "🚨 API Call Failed", t)
+                Log.e(TAG, "🚨 Weather API Call Failed", t)
+                callback(false)
+            }
+        })
+    }
+
+    private fun fetchAddressData(lat: Double, lon: Double) {
+        Log.d(TAG, "📍 Fetching address for Lat: $lat, Lon: $lon")
+        val call = addressApi.getAddress(lat, lon) // ✅ Replace with actual API key
+        call.enqueue(object : Callback<AddressResponse> {
+            override fun onResponse(call: Call<AddressResponse>, response: Response<AddressResponse>) {
+                if (response.isSuccessful) {
+                    val address = response.body()?.displayName ?: "Unknown Location"
+                    Log.d(TAG, "📍 Address found: $address")
+                    _addressFlow.value = address
+                } else {
+                    Log.e(TAG, "❌ Address API Error: ${response.code()} - ${response.errorBody()?.string()}")
+                    _addressFlow.value = "Unknown Location"
+                }
+            }
+
+            override fun onFailure(call: Call<AddressResponse>, t: Throwable) {
+                Log.e(TAG, "🚨 Address API Call Failed", t)
+                _addressFlow.value = "Unknown Location"
             }
         })
     }
