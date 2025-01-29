@@ -15,6 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -25,6 +28,7 @@ import com.kwapp.R
 import com.kwapp.retrofit.pojo.WeatherResponse
 import com.kwapp.service.WeatherService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kwapp.utils.DateUtils
 import com.kwapp.utils.WeatherCondition
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -95,7 +99,11 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                     .average()
                     .toInt()
 
-                val displayDate = if (index == 0) context.getString(R.string.today) else time // ✅ Replace with "Today"
+                val displayDate = if (index == 0) {
+                    context.getString(R.string.today) // ✅ Assign String instead of AnnotatedString
+                } else {
+                    DateUtils.formatDate(time) // ✅ Convert "yyyy-MM-dd" -> "d.M.yyyy"
+                }
 
                 WeatherItem(
                     iconRes = R.drawable.ic_default, // TODO: Map weather code to icon
@@ -152,10 +160,28 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 Text(text = "Humidity: ${weatherItem.humidity}", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // ✅ Date & Conditions
+            // WeatherItemView
             Column(horizontalAlignment = Alignment.End) {
-                Text(text = weatherItem.dateInfo, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
-                Text(text = weatherCondition.name.replace("_", " "), style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                val context = LocalContext.current
+                Text(
+                    text = buildAnnotatedString {
+                        if (weatherItem.dateInfo == context.getString(R.string.today)) { // ✅ Fixed: Use context here
+                            pushStyle(SpanStyle(fontWeight = FontWeight.Bold)) // ✅ Make "Today" Bold
+                            append(weatherItem.dateInfo)
+                            pop()
+                        } else {
+                            append(weatherItem.dateInfo) // ✅ Normal text for other dates
+                        }
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
+
+                Text(
+                    text = weatherCondition.name.replace("_", " "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black
+                )
             }
         }
     }
