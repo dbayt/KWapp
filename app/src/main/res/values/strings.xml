@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">KWapp</string>
+
+    <string name="no_location">No location</string>
+    <string name="no_info">No info</string>
+    <string name="searchbar_hint">Search for a city, address, or place</string>
+    <string name="address_hint">Address</string>
+    <string name="weather_for_text">Weather for </string>
+    <string name="today">TODAY</string>
+    <string name="tomorrow">TOMORROW</string>
+    <string name="error">Error</string>
+    <string name="date_value">Date</string>
+    <string name="conditions">Good</string>
+
 </resources>

@@ -1,6 +1,9 @@
 package com.kwapp.viewmodel
 
+import android.location.Location
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import com.kwapp.service.LocationService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -9,6 +12,8 @@ enum class LocationPermissionStatus {
 }
 
 open class LocationViewModel : ViewModel() {
+    val currentLocation: LiveData<Location?> = LocationService.currentLocationLiveData
+
     private val _permissionStatus = MutableStateFlow(LocationPermissionStatus.UNKNOWN)
     open val permissionStatus: StateFlow<LocationPermissionStatus> = _permissionStatus
 
@@ -18,5 +23,9 @@ open class LocationViewModel : ViewModel() {
 
     fun onLocationPermissionDenied() {
         _permissionStatus.value = LocationPermissionStatus.DENIED
+    }
+
+    fun onLocationPermissionUnknown() {
+        _permissionStatus.value = LocationPermissionStatus.UNKNOWN
     }
 }

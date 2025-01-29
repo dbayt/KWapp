@@ -65,6 +65,16 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
     implementation("androidx.compose.runtime:runtime-livedata:1.5.1") // Replace version as needed
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    dependencies {
+        implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")  // ViewModel
+        implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")   // LiveData
+
+        implementation("com.google.android.gms:play-services-location:21.0.1") // Google Location Services
+        implementation("androidx.core:core-splashscreen:1.0.1") //Simple splash screen
+    }
+
 
 
 

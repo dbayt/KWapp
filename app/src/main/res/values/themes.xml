@@ -1,5 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.KWapp" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 🌟 Main App Theme -->
+    <style name="Theme.KWapp" parent="android:Theme.Material.NoActionBar">
+        <!-- Primary Colors -->
+        <item name="android:colorPrimary">@color/primary</item>
+        <item name="android:textColorPrimaryInverse">@color/primary_variant</item>
+        <item name="android:textColorPrimaryNoDisable">@color/onPrimary</item>
+        <item name="android:background">@color/background</item>
+
+        <!-- 🚫 No Action Bar -->
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- 🚀 Splash Screen Theme -->
+    <style name="Theme.KWapp.Splash" parent="Theme.SplashScreen">
+        <!-- Background color -->
+        <item name="windowSplashScreenBackground">@color/white</item>
+
+        <!-- Optional: Splash Screen Icon -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_default</item>
+
+        <!-- Branding Image (Optional) -->
+        <!--        <item name="windowSplashScreenBrandingImage">@drawable/splash_branding</item>-->
+
+        <!-- Theme After Splash -->
+        <item name="postSplashScreenTheme">@style/Theme.KWapp</item>
+    </style>
+
 </resources>
