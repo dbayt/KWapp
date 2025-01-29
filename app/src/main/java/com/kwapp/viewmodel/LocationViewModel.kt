@@ -12,7 +12,7 @@ enum class LocationPermissionStatus {
 }
 
 open class LocationViewModel : ViewModel() {
-    val currentLocation: LiveData<Location?> = WeatherService.currentLocationLiveData
+    val currentLocation: StateFlow<Location?> = WeatherService.currentLocationFlow
 
     private val _permissionStatus = MutableStateFlow(LocationPermissionStatus.UNKNOWN)
     open val permissionStatus: StateFlow<LocationPermissionStatus> = _permissionStatus

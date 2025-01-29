@@ -28,27 +28,25 @@ class MainActivity : ComponentActivity() {
 
         val locationViewModel = ViewModelProvider(this)[LocationViewModel::class.java]
 
-        // Check if permission is granted
         val isPermissionGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
         if (isPermissionGranted) {
-            Log.d(TAG, "Permission already granted, starting LocationService")
+            Log.d(TAG, "✅ Permission already granted, starting WeatherService & navigating to WeatherScreen")
             locationViewModel.onLocationPermissionGranted()
-            startLocationService() // Start the location service automatically
+            startWeatherService() // ✅ Start the service here
         }
 
-        // Location Permission Launcher
         val locationPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
             if (isGranted) {
-                Log.d(TAG, "Location permission granted")
+                Log.d(TAG, "✅ Location permission granted")
                 locationViewModel.onLocationPermissionGranted()
-                startLocationService() // Start the location service after permission is granted
+                startWeatherService() // ✅ Start service when permission is granted
             } else {
-                Log.d(TAG, "Location permission denied")
+                Log.d(TAG, "🚨 Location permission denied")
                 locationViewModel.onLocationPermissionDenied()
             }
         }
@@ -59,11 +57,11 @@ class MainActivity : ComponentActivity() {
 
                 when (permissionStatus) {
                     LocationPermissionStatus.GRANTED -> {
-                        Log.d(TAG, "Navigating to WeatherScreen")
-                        WeatherScreen()
+                        Log.d(TAG, "📌 Navigating to WeatherScreen")
+                        WeatherScreen(lifecycleOwner = this@MainActivity)
                     }
                     LocationPermissionStatus.DENIED, LocationPermissionStatus.UNKNOWN -> {
-                        Log.d(TAG, "Showing LocationPermissionScreen")
+                        Log.d(TAG, "🔒 Showing LocationPermissionScreen")
                         LocationPermissionScreen(
                             requestLocationPermission = {
                                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -75,16 +73,15 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Ask for permission only if not already granted
         if (!isPermissionGranted) {
-            Log.d(TAG, "Requesting location permission")
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
-    private fun startLocationService() {
-        Log.d(TAG, "Starting LocationService")
+    // ✅ Function to Start WeatherService
+    private fun startWeatherService() {
+        Log.d(TAG, "🌍 Starting WeatherService...")
         val serviceIntent = Intent(this, WeatherService::class.java)
-        startService(serviceIntent)
+        startService(serviceIntent) // ✅ This will start the service
     }
 }

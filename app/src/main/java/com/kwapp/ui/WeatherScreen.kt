@@ -18,34 +18,21 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import com.kwapp.R
+import com.kwapp.retrofit.pojo.WeatherResponse
+import com.kwapp.service.WeatherService
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 
 @Composable
-fun WeatherScreen() {
+fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val address = "Current Address: 123 Main Street"
-    val weatherItems = listOf(
-        WeatherItem(
-            iconRes = R.drawable.ic_default,
-            temperature = "25°C",
-            feelsLike = "22°C",
-            minTemp = "18°C",
-            maxTemp = "30°C",
-            humidity = "75%",
-            dateInfo = "2024-06-01",
-            conditions = "Sunny"
-        ),
-        WeatherItem(
-            iconRes = R.drawable.ic_default,
-            temperature = "20°C",
-            feelsLike = "18°C",
-            minTemp = "15°C",
-            maxTemp = "23°C",
-            humidity = "80%",
-            dateInfo = "2024-06-02",
-            conditions = "Cloudy"
-        )
-    )
+
+    // ✅ Fix 1: Use collectAsStateWithLifecycle() properly
+    val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -53,7 +40,7 @@ fun WeatherScreen() {
             .padding(16.dp)
             .background(color = Color(0xFFF5F5DC)) // Creamy beige
     ) {
-        // Search Bar
+        // 🔹 Search Bar
         TextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -74,7 +61,7 @@ fun WeatherScreen() {
             })
         )
 
-        // Address TextView
+        // 🔹 Address TextView
         Text(
             text = address,
             style = MaterialTheme.typography.titleMedium,
@@ -84,12 +71,27 @@ fun WeatherScreen() {
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        // LazyColumn for Weather Items
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(weatherItems) { weatherItem ->
-                WeatherItemView(weatherItem)
+        // 🔹 Show Loading State or Weather Data
+        if (weatherData == null) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            val weatherList = weatherData!!.daily.time.mapIndexed { index, time ->
+                WeatherItem(
+                    iconRes = R.drawable.ic_default, // TODO: Set correct icon
+                    temperature = "${weatherData!!.currentWeather.temperature}°C",
+                    feelsLike = "${weatherData!!.currentWeather.apparentTemperature}°C",
+                    minTemp = "${weatherData!!.daily.temperatureMin[index]}°C",
+                    maxTemp = "${weatherData!!.daily.temperatureMax[index]}°C",
+                    humidity = "${weatherData!!.currentWeather.relativeHumidity}%",
+                    dateInfo = time,
+                    conditions = "Unknown" // TODO: Map weather code to description
+                )
+            }
+
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(weatherList) { weatherItem -> // ✅ weatherItem is now of type WeatherItem
+                    WeatherItemView(weatherItem)
+                }
             }
         }
     }
@@ -110,7 +112,7 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Weather Icon
+            // 🔹 Weather Icon
             Image(
                 painter = painterResource(id = weatherItem.iconRes),
                 contentDescription = "Weather Icon",
@@ -119,7 +121,7 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                     .padding(end = 8.dp)
             )
 
-            // Weather Info Column
+            // 🔹 Weather Info Column
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Temp: ${weatherItem.temperature}", style = MaterialTheme.typography.titleMedium)
                 Text(text = "Feels Like: ${weatherItem.feelsLike}", style = MaterialTheme.typography.bodyMedium)
@@ -127,7 +129,7 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 Text(text = "Humidity: ${weatherItem.humidity}", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // Date & Conditions
+            // 🔹 Date & Conditions
             Column(horizontalAlignment = Alignment.End) {
                 Text(text = weatherItem.dateInfo, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                 Text(text = weatherItem.conditions, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
@@ -136,13 +138,7 @@ fun WeatherItemView(weatherItem: WeatherItem) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun WeatherScreenPreview() {
-    WeatherScreen()
-}
-
-// Data Model for Weather Item
+// ✅ Data Model for Weather Item
 data class WeatherItem(
     val iconRes: Int,
     val temperature: String,

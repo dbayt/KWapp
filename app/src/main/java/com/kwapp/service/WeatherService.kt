@@ -15,6 +15,8 @@ import com.google.android.gms.location.*
 import com.kwapp.retrofit.RetrofitClient
 import com.kwapp.retrofit.pojo.WeatherResponse
 import com.kwapp.utils.TAG
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -23,8 +25,11 @@ class WeatherService : Service() {
 
 
     companion object {
-        val currentLocationLiveData = MutableLiveData<Location?>()
-        val weatherLiveData = MutableLiveData<WeatherResponse?>()
+        private val _currentLocationFlow = MutableStateFlow<Location?>(null) // ✅ Add Location StateFlow
+        val currentLocationFlow = _currentLocationFlow.asStateFlow() // ✅ Expose Location Flow
+
+        private val _weatherFlow = MutableStateFlow<WeatherResponse?>(null)
+        val weatherLiveData = _weatherFlow.asStateFlow() // ✅ Expose as StateFlow
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -37,11 +42,13 @@ class WeatherService : Service() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
+                Log.d(TAG, "On location result")
+
                 super.onLocationResult(locationResult)
                 val lastLocation = locationResult.lastLocation
                 if (lastLocation != null) {
                     Log.i(TAG, "Latitude: ${lastLocation.latitude}, Longitude: ${lastLocation.longitude}")
-                    currentLocationLiveData.postValue(lastLocation)
+                    _currentLocationFlow.value = lastLocation // ✅ Update location flow
                     fetchWeatherData(lastLocation.latitude, lastLocation.longitude)
                 } else {
                     Log.w(TAG, "Received null location")
@@ -60,7 +67,7 @@ class WeatherService : Service() {
         ).addOnSuccessListener { location ->
             if (location != null) {
                 Log.i(TAG, "Immediate location: Lat=${location.latitude}, Lon=${location.longitude}")
-                currentLocationLiveData.postValue(location)
+                _currentLocationFlow.value = location // ✅ Update immediate location
                 fetchWeatherData(location.latitude, location.longitude)
             } else {
                 Log.w(TAG, "Immediate location is null")
@@ -85,20 +92,25 @@ class WeatherService : Service() {
     }
 
     private fun fetchWeatherData(lat: Double, lon: Double) {
-        Log.d(TAG, "Fetching weather data for Lat: $lat, Lon: $lon")
+        Log.d(TAG, "🌍 Fetching weather data for Lat: $lat, Lon: $lon")
 
-        RetrofitClient.weatherApi.getWeather(lat, lon).enqueue(object : Callback<WeatherResponse> {
+        val call = RetrofitClient.weatherApi.getWeather(lat, lon)
+        Log.d(TAG, "🌍 Sending Weather API request: $call")
+
+        call.enqueue(object : Callback<WeatherResponse> {
             override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
+                Log.d(TAG, "✅ Weather API Response received")
+
                 if (response.isSuccessful) {
-                    Log.d(TAG, "Weather API Response: ${response.body()}")
-                    weatherLiveData.postValue(response.body())
+                    Log.d(TAG, "🌤️ Success: ${response.body()}")
+                    _weatherFlow.value = response.body()
                 } else {
-                    Log.e(TAG, "API Error: ${response.errorBody()?.string()}")
+                    Log.e(TAG, "❌ API Error: ${response.code()} - ${response.errorBody()?.string()}")
                 }
             }
 
             override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                Log.e(TAG, "API Call Failed", t)
+                Log.e(TAG, "🚨 API Call Failed", t)
             }
         })
     }

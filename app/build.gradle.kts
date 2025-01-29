@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
+    implementation(libs.lifecycle.runtime.compose)
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1") // For viewModel()
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3") // For coroutines and collectAsState()
@@ -73,6 +74,8 @@ dependencies {
 
         implementation("com.google.android.gms:play-services-location:21.0.1") // Google Location Services
         implementation("androidx.core:core-splashscreen:1.0.1") //Simple splash screen
+        implementation ("androidx.lifecycle:lifecycle-runtime-compose:2.7.0") // because collectAsStateWithLifecycle() was not found as suggested. collectAsStateWithLifecycle() is provided by Jetpack Compose Lifecycle Runtime, and it prevents memory leaks.
+
     }
 
 
