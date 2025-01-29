@@ -34,22 +34,39 @@ class WeatherService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
+    private var lastSavedLocation: Location? = null // Store the last saved location
+
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service Created")
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 Log.d(TAG, "On location result")
 
                 super.onLocationResult(locationResult)
                 val lastLocation = locationResult.lastLocation
+
                 if (lastLocation != null) {
-                    Log.i(TAG, "Latitude: ${lastLocation.latitude}, Longitude: ${lastLocation.longitude}")
-                    _currentLocationFlow.value = lastLocation // ✅ Update location flow
-                    fetchWeatherData(lastLocation.latitude, lastLocation.longitude)
+                    val previousLocation = lastSavedLocation
+
+                    // ✅ Check if the latitude or longitude difference is greater than 0.001
+                    if (previousLocation == null ||
+                        kotlin.math.abs(lastLocation.latitude - previousLocation.latitude) > 0.001 ||
+                        kotlin.math.abs(lastLocation.longitude - previousLocation.longitude) > 0.001) {
+
+                        Log.i(TAG, "New significant location update: Lat=${lastLocation.latitude}, Lon=${lastLocation.longitude}")
+
+                        _currentLocationFlow.value = lastLocation // ✅ Update location flow
+                        lastSavedLocation = lastLocation // ✅ Save this location as the last one
+                        fetchWeatherData(lastLocation.latitude, lastLocation.longitude)
+
+                    } else {
+                        Log.d(TAG, "Location update ignored (change < 0.001)")
+                    }
                 } else {
                     Log.w(TAG, "Received null location")
                 }
