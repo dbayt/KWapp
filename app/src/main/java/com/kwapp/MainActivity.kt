@@ -8,13 +8,16 @@ import androidx.lifecycle.ViewModelProvider
 import com.kwapp.ui.theme.WeatherAppTheme
 import com.kwapp.viewmodel.LocationViewModel
 import android.Manifest;
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.kwapp.service.WeatherService
 import com.kwapp.ui.WeatherScreen
+import com.kwapp.utils.TAG
 import com.kwapp.viewmodel.LocationPermissionStatus
 
 
@@ -23,17 +26,17 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // Initialize ViewModel
         val locationViewModel = ViewModelProvider(this)[LocationViewModel::class.java]
 
-        // Check if permission is already granted
+        // Check if permission is granted
         val isPermissionGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
         if (isPermissionGranted) {
-            Log.d("MainActivity", "Permission already granted, navigating to WeatherScreen")
-            locationViewModel.onLocationPermissionGranted() // Update ViewModel
+            Log.d(TAG, "Permission already granted, starting LocationService")
+            locationViewModel.onLocationPermissionGranted()
+            startLocationService() // Start the location service automatically
         }
 
         // Location Permission Launcher
@@ -41,26 +44,26 @@ class MainActivity : ComponentActivity() {
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
             if (isGranted) {
-                Log.d("MainActivity", "Location permission granted")
+                Log.d(TAG, "Location permission granted")
                 locationViewModel.onLocationPermissionGranted()
+                startLocationService() // Start the location service after permission is granted
             } else {
-                Log.d("MainActivity", "Location permission denied")
+                Log.d(TAG, "Location permission denied")
                 locationViewModel.onLocationPermissionDenied()
             }
         }
 
-        // Set up the Compose UI
         setContent {
             WeatherAppTheme {
                 val permissionStatus by locationViewModel.permissionStatus.collectAsState()
 
                 when (permissionStatus) {
                     LocationPermissionStatus.GRANTED -> {
-                        Log.d("MainActivity", "Navigating to WeatherScreen")
+                        Log.d(TAG, "Navigating to WeatherScreen")
                         WeatherScreen()
                     }
                     LocationPermissionStatus.DENIED, LocationPermissionStatus.UNKNOWN -> {
-                        Log.d("MainActivity", "Showing LocationPermissionScreen")
+                        Log.d(TAG, "Showing LocationPermissionScreen")
                         LocationPermissionScreen(
                             requestLocationPermission = {
                                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -74,8 +77,14 @@ class MainActivity : ComponentActivity() {
 
         // Ask for permission only if not already granted
         if (!isPermissionGranted) {
-            Log.d("MainActivity", "Requesting location permission")
+            Log.d(TAG, "Requesting location permission")
             locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+    }
+
+    private fun startLocationService() {
+        Log.d(TAG, "Starting LocationService")
+        val serviceIntent = Intent(this, WeatherService::class.java)
+        startService(serviceIntent)
     }
 }

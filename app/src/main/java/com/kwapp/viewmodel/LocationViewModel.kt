@@ -3,7 +3,7 @@ package com.kwapp.viewmodel
 import android.location.Location
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
-import com.kwapp.service.LocationService
+import com.kwapp.service.WeatherService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -12,7 +12,7 @@ enum class LocationPermissionStatus {
 }
 
 open class LocationViewModel : ViewModel() {
-    val currentLocation: LiveData<Location?> = LocationService.currentLocationLiveData
+    val currentLocation: LiveData<Location?> = WeatherService.currentLocationLiveData
 
     private val _permissionStatus = MutableStateFlow(LocationPermissionStatus.UNKNOWN)
     open val permissionStatus: StateFlow<LocationPermissionStatus> = _permissionStatus

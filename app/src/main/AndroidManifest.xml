@@ -33,7 +33,7 @@
         </activity>
 
         <service
-            android:name=".service.LocationService"
+            android:name=".service.WeatherService"
             android:foregroundServiceType="location">
         </service>
 
