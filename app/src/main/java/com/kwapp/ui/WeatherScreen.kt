@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -24,12 +25,16 @@ import com.kwapp.R
 import com.kwapp.retrofit.pojo.WeatherResponse
 import com.kwapp.service.WeatherService
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kwapp.utils.WeatherCondition
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 
 @Composable
 fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val address = "Current Address: 123 Main Street"
+    val context = LocalContext.current // ✅ Get Context inside Composable
 
     // ✅ Fix 1: Use collectAsStateWithLifecycle() properly
     val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle()
@@ -90,6 +95,8 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                     .average()
                     .toInt()
 
+                val displayDate = if (index == 0) context.getString(R.string.today) else time // ✅ Replace with "Today"
+
                 WeatherItem(
                     iconRes = R.drawable.ic_default, // TODO: Map weather code to icon
                     temperature = "$maxTemp°C", // ✅ Fix: Use Max Temp
@@ -97,8 +104,8 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                     minTemp = "$minTemp°C",
                     maxTemp = "$maxTemp°C",
                     humidity = "$humidity%", // ✅ Fix: Use calculated Humidity
-                    dateInfo = time,
-                    conditions = "Unknown" // TODO: Map weather code to description
+                    dateInfo = displayDate,  // ✅ Show "Today" if index == 0
+                    weatherCode = weatherData!!.daily.weatherCode[index] // TODO: Map weather code to description
                 )
             }
 
@@ -113,6 +120,8 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
 
 @Composable
 fun WeatherItemView(weatherItem: WeatherItem) {
+    val weatherCondition = WeatherCondition.fromCode(weatherItem.weatherCode)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,16 +135,16 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 🔹 Weather Icon
+            // ✅ Weather Icon (from enum)
             Image(
-                painter = painterResource(id = weatherItem.iconRes),
+                painter = painterResource(id = weatherCondition.iconResId),
                 contentDescription = "Weather Icon",
                 modifier = Modifier
                     .size(50.dp)
                     .padding(end = 8.dp)
             )
 
-            // 🔹 Weather Info Column
+            // ✅ Weather Info Column
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Temp: ${weatherItem.temperature}", style = MaterialTheme.typography.titleMedium)
                 Text(text = "Feels Like: ${weatherItem.feelsLike}", style = MaterialTheme.typography.bodyMedium)
@@ -143,10 +152,10 @@ fun WeatherItemView(weatherItem: WeatherItem) {
                 Text(text = "Humidity: ${weatherItem.humidity}", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // 🔹 Date & Conditions
+            // ✅ Date & Conditions
             Column(horizontalAlignment = Alignment.End) {
                 Text(text = weatherItem.dateInfo, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
-                Text(text = weatherItem.conditions, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                Text(text = weatherCondition.name.replace("_", " "), style = MaterialTheme.typography.bodyMedium, color = Color.Black)
             }
         }
     }
@@ -161,5 +170,5 @@ data class WeatherItem(
     val maxTemp: String,
     val humidity: String,
     val dateInfo: String,
-    val conditions: String
+    val weatherCode: Int // ✅ Ensure weatherCode is included
 )
