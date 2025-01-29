@@ -75,14 +75,28 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
         if (weatherData == null) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         } else {
-            val weatherList = weatherData!!.daily.time.mapIndexed { index, time ->
+            val weatherList = weatherData!!.daily.time.mapIndexed { index: Int, time: String ->
+                val maxTemp = weatherData!!.daily.temperatureMax[index]
+                val minTemp = weatherData!!.daily.temperatureMin[index]
+
+                // ✅ Approximate Feels Like Temperature (Average of Hourly Apparent Temperature)
+                val feelsLike = weatherData!!.hourly.apparentTemperature
+                    .subList(index * 24, (index + 1) * 24)
+                    .average()
+                    .toInt()
+
+                val humidity = weatherData!!.hourly.relativeHumidity2m
+                    .subList(index * 24, (index + 1) * 24)
+                    .average()
+                    .toInt()
+
                 WeatherItem(
-                    iconRes = R.drawable.ic_default, // TODO: Set correct icon
-                    temperature = "${weatherData!!.currentWeather.temperature}°C",
-                    feelsLike = "${weatherData!!.currentWeather.apparentTemperature}°C",
-                    minTemp = "${weatherData!!.daily.temperatureMin[index]}°C",
-                    maxTemp = "${weatherData!!.daily.temperatureMax[index]}°C",
-                    humidity = "${weatherData!!.currentWeather.relativeHumidity}%",
+                    iconRes = R.drawable.ic_default, // TODO: Map weather code to icon
+                    temperature = "$maxTemp°C", // ✅ Fix: Use Max Temp
+                    feelsLike = "$feelsLike°C", // ✅ Fix: Use calculated Feels Like
+                    minTemp = "$minTemp°C",
+                    maxTemp = "$maxTemp°C",
+                    humidity = "$humidity%", // ✅ Fix: Use calculated Humidity
                     dateInfo = time,
                     conditions = "Unknown" // TODO: Map weather code to description
                 )
