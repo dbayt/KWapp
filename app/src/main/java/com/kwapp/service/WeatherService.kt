@@ -17,9 +17,13 @@ import com.kwapp.retrofit.RetrofitClient.addressApi
 import com.kwapp.retrofit.pojo.AddressResponse
 import com.kwapp.retrofit.pojo.WeatherResponse
 import com.kwapp.retrofit.service.AddressApiService
+import com.kwapp.retrofit.service.CityAutocompleteService
 import com.kwapp.utils.TAG
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -36,16 +40,23 @@ class WeatherService : Service() {
 
         private val _addressFlow = MutableStateFlow<String?>(null) // ✅ Store address
         val addressLiveData = _addressFlow.asStateFlow()
+
+        private val _citySuggestionsFlow = MutableStateFlow<List<String>>(emptyList()) // ✅ Store City Suggestions
+        val citySuggestionsLiveData = _citySuggestionsFlow.asStateFlow()
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var lastSavedLocation: Location? = null
     private val addressApi: AddressApiService = RetrofitClient.addressApi // ✅ Fix: Use Address API from RetrofitClient
+    private val cityAutocompleteApi: CityAutocompleteService = RetrofitClient.cityAutocompleteApi
+
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service Created")
+
+        //When we get location, we fetch address and weather
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -168,6 +179,24 @@ class WeatherService : Service() {
                 _addressFlow.value = "Unknown Location"
             }
         })
+    }
+    fun fetchCitySuggestions(query: String) {
+        if (query.length < 2) {
+            _citySuggestionsFlow.value = emptyList()
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.cityAutocompleteApi.getCitySuggestions(query, 5)
+                val cityNames = response.items?.map { it.title ?: "Unknown" } ?: emptyList() // ✅ Use title (or name if needed)
+                _citySuggestionsFlow.value = cityNames
+                Log.d(TAG, "✅ City suggestions: $cityNames")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to fetch city suggestions", e)
+                _citySuggestionsFlow.value = emptyList()
+            }
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

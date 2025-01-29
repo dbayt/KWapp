@@ -2,6 +2,7 @@ package com.kwapp.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,7 +34,9 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     val context = LocalContext.current // ✅ Get Context inside Composable
 
-    // ✅ Observe Address and Weather Data
+
+    // ✅ Observe Address and Weather Data, City suggestions
+    val citySuggestions by WeatherService.citySuggestionsLiveData.collectAsStateWithLifecycle()
     val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // ✅ Address Flow
     val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // ✅ Weather Flow
 
@@ -43,16 +46,19 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
             .padding(16.dp)
             .background(color = Color(0xFFF5F5DC)) // Creamy beige
     ) {
-        // 🔹 Search Bar
+        // 🔹 Search Bar with Auto-Suggest
         TextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Search...") },
+            onValueChange = { query ->
+                searchQuery = query
+                WeatherService().fetchCitySuggestions(query.text) // ✅ Call API from WeatherService
+            },
+            placeholder = { Text("Search city...") },
             singleLine = true,
             shape = RoundedCornerShape(8.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 8.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
                 unfocusedContainerColor = Color.White,
@@ -61,6 +67,22 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
             keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { /* Handle search action */ })
         )
+
+        // 🔹 City Suggestions List
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(citySuggestions) { city ->
+                Text(
+                    text = city,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .background(Color.LightGray)
+                        .clickable {
+                            searchQuery = TextFieldValue(city)
+                        }
+                )
+            }
+        }
 
         // 🔹 Address TextView (✅ Shows the received address dynamically)
         Text(
@@ -72,6 +94,7 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
             color = MaterialTheme.colorScheme.onBackground
         )
 
+        //Weather list
         // 🔹 Show Loading State or Weather Data
         if (weatherData == null) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
