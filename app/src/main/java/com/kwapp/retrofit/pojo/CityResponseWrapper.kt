@@ -13,5 +13,6 @@ data class CityItem(
 
 data class AddressDetails(
     @SerializedName("city") val city: String?,
-    @SerializedName("country") val country: String?
+    @SerializedName("country") val country: String?,
+    @SerializedName("postalCode") val postalCode: String?
 )

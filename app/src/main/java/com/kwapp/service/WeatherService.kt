@@ -43,6 +43,9 @@ class WeatherService : Service() {
 
         private val _citySuggestionsFlow = MutableStateFlow<List<String>>(emptyList()) // ✅ Store City Suggestions
         val citySuggestionsLiveData = _citySuggestionsFlow.asStateFlow()
+
+        private val _selectedCoordinatesFlow = MutableStateFlow<Pair<Double, Double>?>(null)
+        val selectedCoordinatesFlow = _selectedCoordinatesFlow.asStateFlow()
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -189,15 +192,40 @@ class WeatherService : Service() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.cityAutocompleteApi.getCitySuggestions(query, 5)
-                val cityNames = response.items?.map { it.title ?: "Unknown" } ?: emptyList() // ✅ Use title (or name if needed)
+
+                // ✅ Filter items where "city" and "postalCode" exist
+                val cityNames = response.items
+                    ?.filter { it.address?.city != null && it.address?.postalCode != null }
+                    ?.map { "${it.address?.city}, ${it.address?.postalCode}" }
+                    ?: emptyList()
+
                 _citySuggestionsFlow.value = cityNames
-                Log.d(TAG, "✅ City suggestions: $cityNames")
+                Log.d(TAG, "✅ Filtered City Suggestions: $cityNames")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to fetch city suggestions", e)
                 _citySuggestionsFlow.value = emptyList()
             }
         }
     }
+    fun fetchCityCoordinates(cityName: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Log.d(TAG, "✅ City name: " + cityName)
+                val response = RetrofitClient.geocodeApi.getCityCoordinates(cityName, 1)
+                if (response.isNotEmpty()) {
+                    val location = response.first()
+                    _selectedCoordinatesFlow.value = Pair(location.latitude, location.longitude)
+                    Log.d(TAG, "✅ City coordinates: ${location.latitude}, ${location.longitude}")
+//                    FetchCity and save last location with these locations
+                } else {
+                    Log.e(TAG, "❌ No coordinates found for $cityName")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to fetch city coordinates", e)
+            }
+        }
+    }
+
 
     override fun onBind(intent: Intent?): IBinder? = null
 }

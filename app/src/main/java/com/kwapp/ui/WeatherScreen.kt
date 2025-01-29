@@ -39,6 +39,8 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
     val citySuggestions by WeatherService.citySuggestionsLiveData.collectAsStateWithLifecycle()
     val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // ✅ Address Flow
     val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // ✅ Weather Flow
+    val selectedCoordinates by WeatherService.selectedCoordinatesFlow.collectAsStateWithLifecycle()
+
 
     Column(
         modifier = Modifier
@@ -79,6 +81,7 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                         .background(Color.LightGray)
                         .clickable {
                             searchQuery = TextFieldValue(city)
+                            WeatherService().fetchCityCoordinates(city)
                         }
                 )
             }

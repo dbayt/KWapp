@@ -12,10 +12,4 @@ interface CityAutocompleteService {
         @Query("limit") limit: Int = 5, // Max 5 items
         @Query("apikey") apiKey: String = "wgNGnsqyPfnyY5NVTEUNx89qYvpf5Hu2mV34tXzDWVQ"
     ): CityResponseWrapper
-
-    @GET("geocode")
-    suspend fun getCityGeocode(
-        @Query("q") cityName: String,
-        @Query("apikey") apiKey: String = "wgNGnsqyPfnyY5NVTEUNx89qYvpf5Hu2mV34tXzDWVQ"
-    ): Call<CityResponseWrapper>
 }
