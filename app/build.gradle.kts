@@ -2,17 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization) // ✅ Ensure this alias is used
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "com.kwapp"
     compileSdk = 35
 
-    compileSdk = libs.versions.compileSdk.get().toInt() // Reference from TOML
+    compileSdk = libs.versions.compileSdk.get().toInt()
     defaultConfig {
         minSdk = 24
-        targetSdk = libs.versions.compileSdk.get().toInt() // You can reference it here too
+        targetSdk = libs.versions.compileSdk.get().toInt()
     }
 
     buildTypes {

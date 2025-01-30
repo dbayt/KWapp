@@ -10,6 +10,6 @@ interface CityAutocompleteService {
     suspend fun getCitySuggestions(
         @Query("q") query: String,
         @Query("limit") limit: Int = 5, // Max 5 items
-        @Query("apikey") apiKey: String = "wgNGnsqyPfnyY5NVTEUNx89qYvpf5Hu2mV34tXzDWVQ"
+        @Query("apikey") apiKey: String = "wgNGnsqyPfnyY5NVTEUNx89qYvpf5Hu2mV34tXzDWVQ" //Private key
     ): CityResponseWrapper
 }

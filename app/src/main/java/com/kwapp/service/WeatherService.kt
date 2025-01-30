@@ -10,10 +10,8 @@ import android.location.Location
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
 import com.kwapp.retrofit.RetrofitClient
-import com.kwapp.retrofit.RetrofitClient.addressApi
 import com.kwapp.retrofit.pojo.AddressResponse
 import com.kwapp.retrofit.pojo.CityItem
 import com.kwapp.retrofit.pojo.WeatherResponse
@@ -39,10 +37,10 @@ class WeatherService : Service() {
         private val _weatherFlow = MutableStateFlow<WeatherResponse?>(null)
         val weatherLiveData = _weatherFlow.asStateFlow()
 
-        private val _addressFlow = MutableStateFlow<String?>(null) // Store address
+        private val _addressFlow = MutableStateFlow<String?>(null)
         val addressLiveData = _addressFlow.asStateFlow()
 
-        private val _citySuggestionsFlow = MutableStateFlow<List<CityItem>>(emptyList()) // Store City Suggestions
+        private val _citySuggestionsFlow = MutableStateFlow<List<CityItem>>(emptyList())
         val citySuggestionsLiveData = _citySuggestionsFlow.asStateFlow()
 
         private val _selectedCoordinatesFlow = MutableStateFlow<Pair<Double, Double>?>(null)
@@ -52,7 +50,7 @@ class WeatherService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var lastSavedLocation: Location? = null
-    private val addressApi: AddressApiService = RetrofitClient.addressApi // Fix: Use Address API from RetrofitClient
+    private val addressApi: AddressApiService = RetrofitClient.addressApi
     private val cityAutocompleteApi: CityAutocompleteService = RetrofitClient.cityAutocompleteApi
 
 
@@ -60,7 +58,6 @@ class WeatherService : Service() {
         super.onCreate()
         Log.d(TAG, "Service Created")
 
-        //When we get location, we fetch address and weather
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -127,7 +124,6 @@ class WeatherService : Service() {
         }
     }
 
-    // Combined Function to Fetch Both Weather & Address
     fun fetchWeatherAndAddress(lat: Double, lon: Double) {
         fetchWeatherData(lat, lon) { success ->
             if (success) {
@@ -195,7 +191,7 @@ class WeatherService : Service() {
                 val response = RetrofitClient.cityAutocompleteApi.getCitySuggestions(query, 5)
 
                 val cityTitles = response.items
-                    ?.mapNotNull { it } // Extract title directly
+                    ?.mapNotNull { it } // Extract cityItem
                     ?.distinct() // Ensure unique suggestions
                     ?: emptyList()
 

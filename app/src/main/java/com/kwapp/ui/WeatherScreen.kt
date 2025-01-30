@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -38,28 +39,24 @@ import kotlinx.coroutines.launch
 
     @Composable
     fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
-        val context = LocalContext.current // Get Context inside Composable
-
-        var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+        val context = LocalContext.current
+        val weatherService = WeatherService()
 
         val coroutineScope = rememberCoroutineScope()
-        val location by WeatherService.currentLocationFlow.collectAsState(null)
 
-        // Observe Address and Weather Data, City suggestions
-        var citySuggestionsList by remember { mutableStateOf(listOf<CityItem>()) } // Track city suggestions
+        val location by WeatherService.currentLocationFlow.collectAsState(null)
         val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // Address Flow
         val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // Weather Flow
+        val citySuggestions by WeatherService.citySuggestionsLiveData.collectAsStateWithLifecycle()
+        val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
-        val selectedCoordinates by WeatherService.selectedCoordinatesFlow.collectAsStateWithLifecycle()
+        var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+        var citySuggestionsList by remember { mutableStateOf(listOf<CityItem>()) } // Track city suggestions
         var searchHistory by remember { mutableStateOf(listOf<SearchHistoryItem>()) } // Store last 5 searches
         var showHistory by remember { mutableStateOf(false) } // Controls history visibility
-        val weatherService = WeatherService() // Create an instance
-
-        val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
         val searchHistoryManager = remember { SearchHistoryManager(context) }
 
-        // Update city suggestions list from service
-        val citySuggestions by WeatherService.citySuggestionsLiveData.collectAsStateWithLifecycle()
+
 
         LaunchedEffect(Unit) {
             searchHistoryManager.searchHistory.collect { history ->
@@ -75,8 +72,6 @@ import kotlinx.coroutines.launch
         LaunchedEffect(location) {
             location?.let {
                 Log.d("Compose", "New location: ${it.latitude}, ${it.longitude}")
-
-                // Perform UI updates or other actions when location changes
             }
         }
 
@@ -84,14 +79,13 @@ import kotlinx.coroutines.launch
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .background(color = Color(0xFFF5F5DC)) // Creamy beige
+                .background(color = Color(0xFFF5F5DC))
         ) {
-                // 🔹 Show Search Bar only if it's not collapsed
             TextField(
                 value = searchQuery,
                 onValueChange = { query ->
                     searchQuery = query
-                    showHistory = query.text.isNotEmpty() // ✅ Hide history when text is empty
+                    showHistory = query.text.isNotEmpty() // Hide history when text is empty
 
                     if (query.text.isNotEmpty()) {
                         WeatherService().fetchCitySuggestions(query.text)
@@ -103,7 +97,7 @@ import kotlinx.coroutines.launch
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
-                    .clickable { showHistory = true }, // ✅ Clicking opens list
+                    .clickable { showHistory = true },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = colorResource(id = R.color.sky_blue),
                     unfocusedContainerColor = colorResource(id = R.color.sky_blue),
@@ -111,7 +105,7 @@ import kotlinx.coroutines.launch
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = {
-                    keyboardController?.hide() // ✅ Hide keyboard on search
+                    keyboardController?.hide() // Hide keyboard on search
                 })
             )
 
@@ -127,7 +121,7 @@ import kotlinx.coroutines.launch
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
-                                .background(Color(0xFF87CEFA))
+                                .background(colorResource(id = R.color.sky_blue))
                                 .clickable {
                                     // Hide keyboard & update query
                                     searchQuery = TextFieldValue("")
@@ -149,12 +143,8 @@ import kotlinx.coroutines.launch
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
-                                .background(Color.LightGray)
+                                .background(colorResource(id = R.color.sky_blue))
                                 .clickable {
-                                    // Clear search query & hide keyboard
-                                    searchQuery = TextFieldValue("")
-                                    keyboardController?.hide()
-                                    citySuggestionsList = emptyList()
 
                                     val cityName = cityItem.address?.city ?: "Unknown City"
 
@@ -173,6 +163,10 @@ import kotlinx.coroutines.launch
                                         }
 
                                     }
+                                    // Clear search query & hide keyboard
+                                    searchQuery = TextFieldValue("")
+                                    keyboardController?.hide()
+                                    citySuggestionsList = emptyList()
                                 }
                         )
                     }
@@ -181,7 +175,7 @@ import kotlinx.coroutines.launch
 
             // Address TextView (Shows the received address dynamically)
             Text(
-                text = address.orEmpty(), // Converts null to ""
+                text = stringResource(R.string.weather_today)+" "+address.orEmpty(), // Converts null to ""
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .fillMaxWidth()

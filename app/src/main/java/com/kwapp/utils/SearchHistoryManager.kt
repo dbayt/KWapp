@@ -18,7 +18,7 @@ class SearchHistoryManager(private val context: Context) {
         private const val MAX_HISTORY_SIZE = 5 // Limit to 5 items
     }
 
-    // ✅ Save History to DataStore
+    // Save History to DataStore
     suspend fun saveSearchHistory(history: List<SearchHistoryItem>) {
         context.dataStore.edit { preferences ->
             val jsonString = Json.encodeToString(history)
@@ -26,7 +26,7 @@ class SearchHistoryManager(private val context: Context) {
         }
     }
 
-    // ✅ Get History as a Flow
+    // Get History as a Flow
     val searchHistory: Flow<List<SearchHistoryItem>> = context.dataStore.data
         .map { preferences ->
             val jsonString = preferences[SEARCH_HISTORY_KEY] ?: "[]"
