@@ -121,7 +121,7 @@ import kotlinx.coroutines.launch
                                 .background(Color.LightGray)
                                 .clickable {
                                     // ✅ Hide keyboard & update query
-                                    searchQuery = TextFieldValue(historyItem.displayName)
+                                    searchQuery = TextFieldValue("")
                                     keyboardController?.hide()
                                     showHistory = false
 
@@ -140,7 +140,7 @@ import kotlinx.coroutines.launch
                         )
                     }
                 } else {
-                    //Autosearch suggestions
+                    //Autocomplete suggestions
                     items(citySuggestionsList) { cityItem ->
                         Text(
                             text = cityItem.title,
