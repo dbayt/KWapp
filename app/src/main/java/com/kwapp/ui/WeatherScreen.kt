@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
         var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
         val coroutineScope = rememberCoroutineScope()
+        val location by WeatherService.currentLocationFlow.collectAsState(null)
 
         // Observe Address and Weather Data, City suggestions
         var citySuggestionsList by remember { mutableStateOf(listOf<CityItem>()) } // Track city suggestions
@@ -71,6 +72,14 @@ import kotlinx.coroutines.launch
             citySuggestionsList = citySuggestions
         }
 
+        LaunchedEffect(location) {
+            location?.let {
+                Log.d("Compose", "New location: ${it.latitude}, ${it.longitude}")
+
+                // Perform UI updates or other actions when location changes
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,9 +91,10 @@ import kotlinx.coroutines.launch
                 value = searchQuery,
                 onValueChange = { query ->
                     searchQuery = query
-                    showHistory = query.text.isEmpty() // Show history only when search bar is empty
+                    showHistory = query.text.isNotEmpty() // ✅ Hide history when text is empty
+
                     if (query.text.isNotEmpty()) {
-                        WeatherService().fetchCitySuggestions(query.text) // Fetch city suggestions
+                        WeatherService().fetchCitySuggestions(query.text)
                     }
                 },
                 placeholder = { Text("Search city...") },
@@ -93,7 +103,7 @@ import kotlinx.coroutines.launch
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
-                    .clickable { showHistory = true }, // Clicking shows history
+                    .clickable { showHistory = true }, // ✅ Clicking opens list
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = colorResource(id = R.color.sky_blue),
                     unfocusedContainerColor = colorResource(id = R.color.sky_blue),
@@ -101,10 +111,9 @@ import kotlinx.coroutines.launch
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = {
-                    keyboardController?.hide() // Close keyboard
+                    keyboardController?.hide() // ✅ Hide keyboard on search
                 })
             )
-
 
 
             // 🔹 Combined List: Show either History or Suggestions
