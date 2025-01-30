@@ -210,13 +210,20 @@ class WeatherService : Service() {
     fun fetchCityCoordinates(cityName: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                Log.d(TAG, "✅ City name: " + cityName)
+                Log.d(TAG, "✅ Fetching coordinates for city: $cityName")
                 val response = RetrofitClient.geocodeApi.getCityCoordinates(cityName, 1)
                 if (response.isNotEmpty()) {
                     val location = response.first()
-                    _selectedCoordinatesFlow.value = Pair(location.latitude, location.longitude)
-                    Log.d(TAG, "✅ City coordinates: ${location.latitude}, ${location.longitude}")
-//                    FetchCity and save last location with these locations
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+
+                    // ✅ Update selected coordinates
+                    _selectedCoordinatesFlow.value = Pair(latitude, longitude)
+                    Log.d(TAG, "✅ City coordinates: $latitude, $longitude")
+
+                    // ✅ Fetch weather after successfully fetching coordinates
+                    fetchWeatherAndAddress(latitude, longitude)
+
                 } else {
                     Log.e(TAG, "❌ No coordinates found for $cityName")
                 }

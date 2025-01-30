@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -32,6 +33,7 @@ import com.kwapp.utils.WeatherCondition
 @Composable
 fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var isSearchCollapsed by remember { mutableStateOf(false) } // 🔹 Track search bar state
     val context = LocalContext.current // ✅ Get Context inside Composable
 
 
@@ -48,27 +50,29 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
             .padding(16.dp)
             .background(color = Color(0xFFF5F5DC)) // Creamy beige
     ) {
-        // 🔹 Search Bar with Auto-Suggest
-        TextField(
-            value = searchQuery,
-            onValueChange = { query ->
-                searchQuery = query
-                WeatherService().fetchCitySuggestions(query.text) // ✅ Call API from WeatherService
-            },
-            placeholder = { Text("Search city...") },
-            singleLine = true,
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                disabledContainerColor = Color.White
-            ),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { /* Handle search action */ })
-        )
+        // 🔹 Show Search Bar only if it's not collapsed
+        if (!isSearchCollapsed) {
+            TextField(
+                value = searchQuery,
+                onValueChange = { query ->
+                    searchQuery = query
+                    WeatherService().fetchCitySuggestions(query.text)
+                },
+                placeholder = { Text("Search city...") },
+                singleLine = true,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = colorResource(id = R.color.sky_blue), // 🔹 Sky Blue
+                    unfocusedContainerColor = colorResource(id = R.color.sky_blue),
+                    disabledContainerColor = colorResource(id = R.color.sky_blue)
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { /* Handle search action */ })
+            )
+        }
 
         // 🔹 City Suggestions List
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
@@ -81,6 +85,7 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
                         .background(Color.LightGray)
                         .clickable {
                             searchQuery = TextFieldValue(city)
+                            isSearchCollapsed = true // 🔹 Collapse search bar when city is selected
                             WeatherService().fetchCityCoordinates(city)
                         }
                 )
@@ -147,6 +152,8 @@ fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
 @Composable
 fun WeatherItemView(weatherItem: WeatherItem) {
     val weatherCondition = WeatherCondition.fromCode(weatherItem.weatherCode)
+
+
 
     Card(
         modifier = Modifier
