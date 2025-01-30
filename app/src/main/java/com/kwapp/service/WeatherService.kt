@@ -15,6 +15,7 @@ import com.google.android.gms.location.*
 import com.kwapp.retrofit.RetrofitClient
 import com.kwapp.retrofit.RetrofitClient.addressApi
 import com.kwapp.retrofit.pojo.AddressResponse
+import com.kwapp.retrofit.pojo.CityItem
 import com.kwapp.retrofit.pojo.WeatherResponse
 import com.kwapp.retrofit.service.AddressApiService
 import com.kwapp.retrofit.service.CityAutocompleteService
@@ -41,7 +42,7 @@ class WeatherService : Service() {
         private val _addressFlow = MutableStateFlow<String?>(null) // ✅ Store address
         val addressLiveData = _addressFlow.asStateFlow()
 
-        private val _citySuggestionsFlow = MutableStateFlow<List<String>>(emptyList()) // ✅ Store City Suggestions
+        private val _citySuggestionsFlow = MutableStateFlow<List<CityItem>>(emptyList()) // ✅ Store City Suggestions
         val citySuggestionsLiveData = _citySuggestionsFlow.asStateFlow()
 
         private val _selectedCoordinatesFlow = MutableStateFlow<Pair<Double, Double>?>(null)
@@ -194,7 +195,7 @@ class WeatherService : Service() {
                 val response = RetrofitClient.cityAutocompleteApi.getCitySuggestions(query, 5)
 
                 val cityTitles = response.items
-                    ?.mapNotNull { it.title } // ✅ Extract title directly
+                    ?.mapNotNull { it } // ✅ Extract title directly
                     ?.distinct() // ✅ Ensure unique suggestions
                     ?: emptyList()
 
@@ -211,6 +212,7 @@ class WeatherService : Service() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Log.d(TAG, "✅ Fetching coordinates for city: $cityName")
+                //DEBUGHELPER Fetching coordinates for city: Slovenija, 6000, Koper
                 val response = RetrofitClient.geocodeApi.getCityCoordinates(cityName, 1)
                 if (response.isNotEmpty()) {
                     val location = response.first()

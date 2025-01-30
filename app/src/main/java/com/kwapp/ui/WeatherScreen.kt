@@ -1,5 +1,6 @@
 package com.kwapp.ui
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,11 +27,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kwapp.R
+import com.kwapp.retrofit.pojo.CityItem
 import com.kwapp.retrofit.pojo.SearchHistoryItem
 import com.kwapp.service.WeatherService
 import com.kwapp.utils.DateUtils
 import com.kwapp.utils.WeatherCondition
 import com.kwapp.utils.SearchHistoryManager
+import com.kwapp.utils.TAG
 import kotlinx.coroutines.launch
 
     @Composable
@@ -42,7 +45,7 @@ import kotlinx.coroutines.launch
         val coroutineScope = rememberCoroutineScope()
 
         // ✅ Observe Address and Weather Data, City suggestions
-        var citySuggestionsList by remember { mutableStateOf(listOf<String>()) } // 🔹 Track city suggestions
+        var citySuggestionsList by remember { mutableStateOf(listOf<CityItem>()) } // 🔹 Track city suggestions
         val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // ✅ Address Flow
         val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // ✅ Weather Flow
 
@@ -138,9 +141,9 @@ import kotlinx.coroutines.launch
                     }
                 } else {
                     //Autosearch suggestions
-                    items(citySuggestionsList) { city ->
+                    items(citySuggestionsList) { cityItem ->
                         Text(
-                            text = city,
+                            text = cityItem.title,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
@@ -151,11 +154,14 @@ import kotlinx.coroutines.launch
                                     keyboardController?.hide()
                                     citySuggestionsList = emptyList()
 
+                                    val cityName = cityItem.address?.city ?: "Unknown City"
+
                                     // ✅ Fetch City Coordinates and Update Weather
-                                    weatherService.fetchCityCoordinates(city)
+                                    Log.i(TAG," CITYINAMEDEBUGLOG: " + cityName)
+                                    weatherService.fetchCityCoordinates(cityName)
 
                                     // ✅ Save the confirmed city in history
-                                    weatherService.getCityDetails(city) { displayName, lat, lon ->
+                                    weatherService.getCityDetails(cityName) { displayName, lat, lon ->
                                         val newSearch = SearchHistoryItem(displayName, lat, lon)
                                         val updatedHistory = (listOf(newSearch) + searchHistory).take(5)
 
@@ -165,7 +171,8 @@ import kotlinx.coroutines.launch
                                         }
 
                                         // ✅ Ensure weather updates with new coordinates
-                                        weatherService.fetchWeatherAndAddress(lat, lon)
+                                        //Dont even know why i need this
+//                                        weatherService.fetchWeatherAndAddress(lat, lon)
 
                                         // ✅ Store selected coordinates globally
 //                                        WeatherService.selectedCoordinatesFlow.value = Pair(lat, lon)
