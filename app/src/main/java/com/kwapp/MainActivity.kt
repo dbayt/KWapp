@@ -23,6 +23,7 @@ import com.kwapp.viewmodel.LocationPermissionStatus
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        //Before Main Activity is started
         installSplashScreen()
         super.onCreate(savedInstanceState)
 

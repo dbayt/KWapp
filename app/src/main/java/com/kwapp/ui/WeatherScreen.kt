@@ -118,7 +118,7 @@ import kotlinx.coroutines.launch
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
-                                .background(Color.LightGray)
+                                .background(Color(0xFF87CEFA))
                                 .clickable {
                                     // ✅ Hide keyboard & update query
                                     searchQuery = TextFieldValue("")
@@ -170,33 +170,8 @@ import kotlinx.coroutines.launch
                                             searchHistoryManager.saveSearchHistory(updatedHistory)
                                         }
 
-                                        // ✅ Ensure weather updates with new coordinates
-                                        //Dont even know why i need this
-//                                        weatherService.fetchWeatherAndAddress(lat, lon)
-
-                                        // ✅ Store selected coordinates globally
-//                                        WeatherService.selectedCoordinatesFlow.value = Pair(lat, lon)
                                     }
                                 }
-//                                .clickable {
-//                                    searchQuery = TextFieldValue("")
-//                                    keyboardController?.hide()
-//                                    citySuggestionsList = emptyList()
-//
-//                                    // Fetch city coordinates
-//                                    weatherService.fetchCityCoordinates(city)
-//
-//                                    // ✅ Save new search to DataStore
-//                                    weatherService.getCityDetails(city) { displayName, lat, lon ->
-//                                        val newSearch = SearchHistoryItem(displayName, lat, lon)
-//                                        val updatedHistory = (listOf(newSearch) + searchHistory).take(5)
-//
-//                                        searchHistory = updatedHistory
-//                                        coroutineScope.launch {
-//                                            searchHistoryManager.saveSearchHistory(updatedHistory)
-//                                        }
-//                                    }
-//                                }
                         )
                     }
                 }
