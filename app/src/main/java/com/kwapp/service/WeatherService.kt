@@ -39,10 +39,10 @@ class WeatherService : Service() {
         private val _weatherFlow = MutableStateFlow<WeatherResponse?>(null)
         val weatherLiveData = _weatherFlow.asStateFlow()
 
-        private val _addressFlow = MutableStateFlow<String?>(null) // ✅ Store address
+        private val _addressFlow = MutableStateFlow<String?>(null) // Store address
         val addressLiveData = _addressFlow.asStateFlow()
 
-        private val _citySuggestionsFlow = MutableStateFlow<List<CityItem>>(emptyList()) // ✅ Store City Suggestions
+        private val _citySuggestionsFlow = MutableStateFlow<List<CityItem>>(emptyList()) // Store City Suggestions
         val citySuggestionsLiveData = _citySuggestionsFlow.asStateFlow()
 
         private val _selectedCoordinatesFlow = MutableStateFlow<Pair<Double, Double>?>(null)
@@ -52,7 +52,7 @@ class WeatherService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var lastSavedLocation: Location? = null
-    private val addressApi: AddressApiService = RetrofitClient.addressApi // ✅ Fix: Use Address API from RetrofitClient
+    private val addressApi: AddressApiService = RetrofitClient.addressApi // Fix: Use Address API from RetrofitClient
     private val cityAutocompleteApi: CityAutocompleteService = RetrofitClient.cityAutocompleteApi
 
 
@@ -83,7 +83,7 @@ class WeatherService : Service() {
                         _currentLocationFlow.value = lastLocation
                         lastSavedLocation = lastLocation
 
-                        // ✅ Fetch Weather & Address
+                        // sFetch Weather & Address
                         fetchWeatherAndAddress(lastLocation.latitude, lastLocation.longitude)
 
                     } else {
@@ -127,7 +127,7 @@ class WeatherService : Service() {
         }
     }
 
-    // ✅ Combined Function to Fetch Both Weather & Address
+    // Combined Function to Fetch Both Weather & Address
     fun fetchWeatherAndAddress(lat: Double, lon: Double) {
         fetchWeatherData(lat, lon) { success ->
             if (success) {
@@ -144,12 +144,12 @@ class WeatherService : Service() {
 
         call.enqueue(object : Callback<WeatherResponse> {
             override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-                Log.d(TAG, "✅ Weather API Response received")
+                Log.d(TAG, "Weather API Response received")
 
                 if (response.isSuccessful) {
-                    Log.d(TAG, "🌤️ Success: ${response.body()}")
+                    Log.d(TAG, "🌤Success: ${response.body()}")
                     _weatherFlow.value = response.body()
-                    callback(true) // ✅ Weather fetched successfully
+                    callback(true) // Weather fetched successfully
                 } else {
                     Log.e(TAG, "❌ API Error: ${response.code()} - ${response.errorBody()?.string()}")
                     callback(false)
@@ -165,7 +165,7 @@ class WeatherService : Service() {
 
     private fun fetchAddressData(lat: Double, lon: Double) {
         Log.d(TAG, "📍 Fetching address for Lat: $lat, Lon: $lon")
-        val call = addressApi.getAddress(lat, lon) // ✅ Replace with actual API key
+        val call = addressApi.getAddress(lat, lon) // Replace with actual API key
         call.enqueue(object : Callback<AddressResponse> {
             override fun onResponse(call: Call<AddressResponse>, response: Response<AddressResponse>) {
                 if (response.isSuccessful) {
@@ -195,12 +195,12 @@ class WeatherService : Service() {
                 val response = RetrofitClient.cityAutocompleteApi.getCitySuggestions(query, 5)
 
                 val cityTitles = response.items
-                    ?.mapNotNull { it } // ✅ Extract title directly
-                    ?.distinct() // ✅ Ensure unique suggestions
+                    ?.mapNotNull { it } // Extract title directly
+                    ?.distinct() // Ensure unique suggestions
                     ?: emptyList()
 
                 _citySuggestionsFlow.value = cityTitles
-                Log.d(TAG, "✅ City Suggestions: $cityTitles")
+                Log.d(TAG, "City Suggestions: $cityTitles")
 
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to fetch city suggestions", e)
@@ -211,7 +211,7 @@ class WeatherService : Service() {
     fun fetchCityCoordinates(cityName: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                Log.d(TAG, "✅ Fetching coordinates for city: $cityName")
+                Log.d(TAG, "Fetching coordinates for city: $cityName")
                 //DEBUGHELPER Fetching coordinates for city: Slovenija, 6000, Koper
                 val response = RetrofitClient.geocodeApi.getCityCoordinates(cityName, 1)
                 if (response.isNotEmpty()) {
@@ -219,11 +219,11 @@ class WeatherService : Service() {
                     val latitude = location.latitude
                     val longitude = location.longitude
 
-                    // ✅ Update selected coordinates
+                    // Update selected coordinates
                     _selectedCoordinatesFlow.value = Pair(latitude, longitude)
-                    Log.d(TAG, "✅ City coordinates: $latitude, $longitude")
+                    Log.d(TAG, "City coordinates: $latitude, $longitude")
 
-                    // ✅ Fetch weather after successfully fetching coordinates
+                    // Fetch weather after successfully fetching coordinates
                     fetchWeatherAndAddress(latitude, longitude)
 
                 } else {

@@ -38,26 +38,26 @@ import kotlinx.coroutines.launch
 
     @Composable
     fun WeatherScreen(lifecycleOwner: LifecycleOwner) {
-        val context = LocalContext.current // ✅ Get Context inside Composable
+        val context = LocalContext.current // Get Context inside Composable
 
         var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
         val coroutineScope = rememberCoroutineScope()
 
-        // ✅ Observe Address and Weather Data, City suggestions
-        var citySuggestionsList by remember { mutableStateOf(listOf<CityItem>()) } // 🔹 Track city suggestions
-        val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // ✅ Address Flow
-        val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // ✅ Weather Flow
+        // Observe Address and Weather Data, City suggestions
+        var citySuggestionsList by remember { mutableStateOf(listOf<CityItem>()) } // Track city suggestions
+        val address by WeatherService.addressLiveData.collectAsStateWithLifecycle() // Address Flow
+        val weatherData by WeatherService.weatherLiveData.collectAsStateWithLifecycle() // Weather Flow
 
         val selectedCoordinates by WeatherService.selectedCoordinatesFlow.collectAsStateWithLifecycle()
-        var searchHistory by remember { mutableStateOf(listOf<SearchHistoryItem>()) } // ✅ Store last 5 searches
-        var showHistory by remember { mutableStateOf(false) } // ✅ Controls history visibility
-        val weatherService = WeatherService() // ✅ Create an instance
+        var searchHistory by remember { mutableStateOf(listOf<SearchHistoryItem>()) } // Store last 5 searches
+        var showHistory by remember { mutableStateOf(false) } // Controls history visibility
+        val weatherService = WeatherService() // Create an instance
 
         val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
         val searchHistoryManager = remember { SearchHistoryManager(context) }
 
-        // ✅ Update city suggestions list from service
+        // Update city suggestions list from service
         val citySuggestions by WeatherService.citySuggestionsLiveData.collectAsStateWithLifecycle()
 
         LaunchedEffect(Unit) {
@@ -82,7 +82,7 @@ import kotlinx.coroutines.launch
                 value = searchQuery,
                 onValueChange = { query ->
                     searchQuery = query
-                    showHistory = query.text.isEmpty() // ✅ Show history only when search bar is empty
+                    showHistory = query.text.isEmpty() // Show history only when search bar is empty
                     if (query.text.isNotEmpty()) {
                         WeatherService().fetchCitySuggestions(query.text) // Fetch city suggestions
                     }
@@ -93,7 +93,7 @@ import kotlinx.coroutines.launch
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 8.dp)
-                    .clickable { showHistory = true }, // ✅ Clicking shows history
+                    .clickable { showHistory = true }, // Clicking shows history
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = colorResource(id = R.color.sky_blue),
                     unfocusedContainerColor = colorResource(id = R.color.sky_blue),
@@ -120,23 +120,16 @@ import kotlinx.coroutines.launch
                                 .padding(8.dp)
                                 .background(Color(0xFF87CEFA))
                                 .clickable {
-                                    // ✅ Hide keyboard & update query
+                                    // Hide keyboard & update query
                                     searchQuery = TextFieldValue("")
                                     keyboardController?.hide()
                                     showHistory = false
 
-                                    // ✅ Update Weather Data for selected location
+                                    // Update Weather Data for selected location
                                     weatherService.fetchWeatherAndAddress(historyItem.latitude, historyItem.longitude)
 
-                                    // ✅ Store selected coordinates globally
-//                                    weatherService.selectedCoordinatesFlow = Pair(historyItem.latitude, historyItem.longitude)
                                 }
-//                                .clickable {
-//                                    searchQuery = TextFieldValue(historyItem.displayName)
-//                                    keyboardController?.hide()
-//                                    showHistory = false
-//                                    weatherService.fetchWeatherAndAddress(historyItem.latitude, historyItem.longitude)
-//                                }
+
                         )
                     }
                 } else {
@@ -149,18 +142,18 @@ import kotlinx.coroutines.launch
                                 .padding(8.dp)
                                 .background(Color.LightGray)
                                 .clickable {
-                                    // ✅ Clear search query & hide keyboard
+                                    // Clear search query & hide keyboard
                                     searchQuery = TextFieldValue("")
                                     keyboardController?.hide()
                                     citySuggestionsList = emptyList()
 
                                     val cityName = cityItem.address?.city ?: "Unknown City"
 
-                                    // ✅ Fetch City Coordinates and Update Weather
+                                    // Fetch City Coordinates and Update Weather
                                     Log.i(TAG," CITYINAMEDEBUGLOG: " + cityName)
                                     weatherService.fetchCityCoordinates(cityName)
 
-                                    // ✅ Save the confirmed city in history
+                                    // Save the confirmed city in history
                                     weatherService.getCityDetails(cityName) { displayName, lat, lon ->
                                         val newSearch = SearchHistoryItem(displayName, lat, lon)
                                         val updatedHistory = (listOf(newSearch) + searchHistory).take(5)
@@ -177,9 +170,9 @@ import kotlinx.coroutines.launch
                 }
             }
 
-            // 🔹 Address TextView (✅ Shows the received address dynamically)
+            // Address TextView (Shows the received address dynamically)
             Text(
-                text = address.orEmpty(), // ✅ Converts null to ""
+                text = address.orEmpty(), // Converts null to ""
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -188,7 +181,7 @@ import kotlinx.coroutines.launch
             )
 
             //Weather list
-            // 🔹 Show Loading State or Weather Data
+            // Show Loading State or Weather Data
             if (weatherData == null) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
@@ -196,7 +189,7 @@ import kotlinx.coroutines.launch
                     val maxTemp = weatherData!!.daily.temperatureMax[index]
                     val minTemp = weatherData!!.daily.temperatureMin[index]
 
-                    // ✅ Approximate Feels Like Temperature (Average of Hourly Apparent Temperature)
+                    // Approximate Feels Like Temperature (Average of Hourly Apparent Temperature)
                     val feelsLike = weatherData!!.hourly.apparentTemperature
                         .subList(index * 24, (index + 1) * 24)
                         .average()
@@ -208,13 +201,13 @@ import kotlinx.coroutines.launch
                         .toInt()
 
                     val displayDate = if (index == 0) {
-                        context.getString(R.string.today) // ✅ Show "Today"
+                        context.getString(R.string.today) // Show "Today"
                     } else {
-                        DateUtils.formatDate(time) // ✅ Convert "yyyy-MM-dd" -> "d.M.yyyy"
+                        DateUtils.formatDate(time) // Convert "yyyy-MM-dd" -> "d.M.yyyy"
                     }
 
                     WeatherItem(
-                        iconRes = WeatherCondition.fromCode(weatherData!!.daily.weatherCode[index]).iconResId, // ✅ Fixed icon mapping
+                        iconRes = WeatherCondition.fromCode(weatherData!!.daily.weatherCode[index]).iconResId, // Fixed icon mapping
                         temperature = "$maxTemp°C",
                         feelsLike = "$feelsLike°C",
                         minTemp = "$minTemp°C",
@@ -253,7 +246,7 @@ import kotlinx.coroutines.launch
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // ✅ Weather Icon (Fixed)
+                // Weather Icon (Fixed)
                 Image(
                     painter = painterResource(id = weatherCondition.iconResId),
                     contentDescription = "Weather Icon",
@@ -262,7 +255,7 @@ import kotlinx.coroutines.launch
                         .padding(end = 8.dp)
                 )
 
-                // ✅ Weather Info Column
+                // Weather Info Column
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = "Temp: ${weatherItem.temperature}", style = MaterialTheme.typography.titleMedium)
                     Text(text = "Feels Like: ${weatherItem.feelsLike}", style = MaterialTheme.typography.bodyMedium)
@@ -270,17 +263,17 @@ import kotlinx.coroutines.launch
                     Text(text = "Humidity: ${weatherItem.humidity}", style = MaterialTheme.typography.bodyMedium)
                 }
 
-                // ✅ Date & Conditions
+                // Date & Conditions
                 Column(horizontalAlignment = Alignment.End) {
                     val context = LocalContext.current
                     Text(
                         text = buildAnnotatedString {
                             if (weatherItem.dateInfo == context.getString(R.string.today)) {
-                                pushStyle(SpanStyle(fontWeight = FontWeight.Bold)) // ✅ Make "Today" Bold
+                                pushStyle(SpanStyle(fontWeight = FontWeight.Bold)) // Make "Today" Bold
                                 append(weatherItem.dateInfo)
                                 pop()
                             } else {
-                                append(weatherItem.dateInfo) // ✅ Normal text for other dates
+                                append(weatherItem.dateInfo) // Normal text for other dates
                             }
                         },
                         style = MaterialTheme.typography.bodyMedium,
@@ -297,7 +290,7 @@ import kotlinx.coroutines.launch
     }
 }
 
-// ✅ Data Model for Weather Item
+// Data Model for Weather Item
 data class WeatherItem(
     val iconRes: Int,
     val temperature: String,
