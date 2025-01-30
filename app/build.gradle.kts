@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization) // ✅ Ensure this alias is used
 }
 
 android {
@@ -68,7 +69,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.5.1") // Replace version as needed
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
-    dependencies {
+
         implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")  // ViewModel
         implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")   // LiveData
 
@@ -76,7 +77,10 @@ dependencies {
         implementation("androidx.core:core-splashscreen:1.0.1") //Simple splash screen
         implementation ("androidx.lifecycle:lifecycle-runtime-compose:2.7.0") // because collectAsStateWithLifecycle() was not found as suggested. collectAsStateWithLifecycle() is provided by Jetpack Compose Lifecycle Runtime, and it prevents memory leaks.
 
-    }
+        implementation ("androidx.datastore:datastore-preferences:1.0.0")
+        implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+
+
 
 
 

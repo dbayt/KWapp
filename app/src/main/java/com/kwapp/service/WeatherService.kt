@@ -127,7 +127,7 @@ class WeatherService : Service() {
     }
 
     // ✅ Combined Function to Fetch Both Weather & Address
-    private fun fetchWeatherAndAddress(lat: Double, lon: Double) {
+    fun fetchWeatherAndAddress(lat: Double, lon: Double) {
         fetchWeatherData(lat, lon) { success ->
             if (success) {
                 fetchAddressData(lat, lon)
@@ -193,14 +193,14 @@ class WeatherService : Service() {
             try {
                 val response = RetrofitClient.cityAutocompleteApi.getCitySuggestions(query, 5)
 
-                // ✅ Filter items where "city" and "postalCode" exist
-                val cityNames = response.items
-                    ?.filter { it.address?.city != null && it.address?.postalCode != null }
-                    ?.map { "${it.address?.city}, ${it.address?.postalCode}" }
+                val cityTitles = response.items
+                    ?.mapNotNull { it.title } // ✅ Extract title directly
+                    ?.distinct() // ✅ Ensure unique suggestions
                     ?: emptyList()
 
-                _citySuggestionsFlow.value = cityNames
-                Log.d(TAG, "✅ Filtered City Suggestions: $cityNames")
+                _citySuggestionsFlow.value = cityTitles
+                Log.d(TAG, "✅ City Suggestions: $cityTitles")
+
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to fetch city suggestions", e)
                 _citySuggestionsFlow.value = emptyList()
@@ -229,6 +229,24 @@ class WeatherService : Service() {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to fetch city coordinates", e)
+            }
+        }
+    }
+
+    fun getCityDetails(cityName: String, callback: (String, Double, Double) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.geocodeApi.getCityCoordinates(cityName, 1)
+                if (response.isNotEmpty()) {
+                    val location = response.first()
+                    val displayName = cityName
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+
+                    callback(displayName, latitude, longitude)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to fetch city details", e)
             }
         }
     }
